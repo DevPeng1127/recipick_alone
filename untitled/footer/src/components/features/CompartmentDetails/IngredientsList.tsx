@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import IngredientAddButton from "../FridgeButtons.tsx";
 
 // 식재료 타입 정의
 interface Ingredient {
@@ -26,7 +27,7 @@ interface IngredientItemProps {
 const IngredientItem: React.FC<IngredientItemProps> = ({ ingredient, onClick }) => {
     return (
         <div
-            className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform duration-200 p-2"
+            className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform duration-200 p-1"
             onClick={() => onClick(ingredient)}
         >
             {/* 동그란 이모지 아이콘 */}
@@ -37,7 +38,7 @@ const IngredientItem: React.FC<IngredientItemProps> = ({ ingredient, onClick }) 
             </div>
 
             {/* 식재료 이름 */}
-            <p className="mt-3 text-2xl font-semibold text-gray-800 text-center max-w-[150px] truncate">
+            <p className="mt-2 text-2xl font-semibold text-gray-800 text-center max-w-[150px] truncate">
                 {ingredient.name}
             </p>
         </div>
@@ -70,10 +71,12 @@ const IngredientList: React.FC<IngredientListProps> = ({ ingredients, onIngredie
                                 onClick={onIngredientClick}
                             />
                         ))}
+                        {/* 마지막 그룹이면 + 버튼도 같이 추가 */}
+                        {groupIndex === ingredientGroups.length - 1 && (
+                            <IngredientAddButton onClick={() => console.log("새 식재료 추가")} />
+                        )}
                     </div>
-
-                     {/*마지막 그룹이 아니면 구분선 추가*/}
-                    {groupIndex < ingredientGroups.length - 1 && <Divider />}
+                    <Divider />
                 </React.Fragment>
             ))}
 
@@ -81,11 +84,16 @@ const IngredientList: React.FC<IngredientListProps> = ({ ingredients, onIngredie
             {ingredients.length === 0 && (
                 <div className="text-center py-20">
                     <p className="text-xl text-gray-800">등록된 식재료가 없습니다</p>
+                    <div className="mt-6 flex justify-center">
+                        <IngredientAddButton onClick={() => console.log("새 식재료 추가")} />
+                    </div>
                 </div>
             )}
         </div>
     );
 };
+
+
 
 // 사용 예시 컴포넌트
 const IngredientListExample: React.FC = () => {
@@ -122,6 +130,7 @@ const IngredientListExample: React.FC = () => {
         </div>
     );
 };
+
 
 export default IngredientListExample;
 export { IngredientList, type Ingredient, type IngredientListProps };

@@ -20,7 +20,9 @@ const Categories: string[] = [
 ];
 
 export default function CategoryButtons() {
-    const [selected, setSelected] = useState<string[]>([]);
+    const [selected, setSelected] = useState<string[]>(
+        Categories.filter((c) => c !== "전체")
+    );
 
     const handleClick = (category: string) => {
         if (category === "전체") {
@@ -48,7 +50,7 @@ export default function CategoryButtons() {
     const isAllSelected = selected.length === Categories.length - 1;
 
     return (
-        <div className="flex flex-wrap gap-2 pt-5 pb-0 justify-center">
+        <div className="flex flex-wrap gap-2 pt-4 pb-0 justify-center">
             {Categories.map((category, idx) => {
                 const isSelected =
                     category === "전체" ? isAllSelected : selected.includes(category);
@@ -57,7 +59,7 @@ export default function CategoryButtons() {
                     <button
                         key={idx}
                         onClick={() => handleClick(category)}
-                        className={`py-2 px-4 rounded-full font-bold transition-colors 
+                        className={`py-1 px-4 rounded-full font-bold transition-colors 
               ${
                             isSelected
                                 ? "bg-blue-800 text-white"

@@ -31,3 +31,31 @@ export const NameEditButton = () => {
         <svg className={"w-5 right-2 inline-block"} xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#9AA1AA"><path d="M180-180h44l472-471-44-44-472 471v44Zm-60 60v-128l575-574q8-8 19-12.5t23-4.5q11 0 22 4.5t20 12.5l44 44q9 9 13 20t4 22q0 11-4.5 22.5T823-694L248-120H120Zm659-617-41-41 41 41Zm-105 64-22-22 44 44-22-22Z"/></svg>
     );
 }
+
+// IngredientAddButton.tsx
+import React from "react";
+
+interface IngredientAddButtonProps {
+    onClick: () => void;
+}
+
+const IngredientAddButton: React.FC<IngredientAddButtonProps> = ({ onClick }) => {
+    return (
+        <div
+            className="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform duration-200 p-1"
+            onClick={onClick}
+        >
+            {/* 동그란 + 아이콘 */}
+            <div className="w-[150px] h-[150px] overflow-hidden bg-white bg-opacity-30 border-4 border-gray-100 rounded-full flex items-center justify-center pb-3 shadow-lg hover:shadow-xl transition-shadow duration-200">
+                <span className="text-6xl text-gray-800">+</span>
+            </div>
+
+            {/* 텍스트 라벨 */}
+            <p className="mt-2 text-2xl font-semibold text-gray-800 text-center max-w-[150px] truncate">
+                식재료 추가
+            </p>
+        </div>
+    );
+};
+
+export default IngredientAddButton;
