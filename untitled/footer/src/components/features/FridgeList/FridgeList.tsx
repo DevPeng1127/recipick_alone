@@ -21,9 +21,6 @@ const FridgeList: React.FC = () => {
         { id: "fridge-1", name: "냉장고 1" },
         { id: "fridge-2", name: "냉장고 2" },
         { id: "fridge-3", name: "냉장고 3" },
-        { id: "fridge-4", name: "냉장고 4" },
-        { id: "fridge-5", name: "냉장고 5" },
-        { id: "fridge-6", name: "냉장고 6" },
     ];
 
     const [fridgeList, setFridgeList] = useState<Fridge[]>(initialFridges);
@@ -44,11 +41,11 @@ const FridgeList: React.FC = () => {
         }
     };
 
-    // 디바운스된 저장 함수 (2초 뒤 실행)
+    // 디바운스된 저장 함수 (3초 뒤 실행)
     const debouncedSave = useCallback(
         debounce((orderIds: string[]) => {
             saveFridgeOrderToServer(orderIds);
-        }, 2000),
+        }, 3000),
         []
     );
 
@@ -119,6 +116,19 @@ const FridgeList: React.FC = () => {
     }, [fridgeList]);
 
     // ----------------------------
+    // 새로운 냉장고 추가
+    // ----------------------------
+    const handleAddFridge = (name: string) => {
+        const newFridge: Fridge = {
+            id: `fridge-${Date.now()}`, // 고유 ID 생성
+            name,
+        };
+        const newList = [...fridgeList, newFridge];
+        setFridgeList(newList);
+        persistOrder(newList);
+    };
+
+    // ----------------------------
     // 캐러셀 스크롤
     // ----------------------------
     const scrollLeft = () => {
@@ -137,12 +147,13 @@ const FridgeList: React.FC = () => {
 
     return (
         <div className="fridge_list_wrap w-4/5 h-4/5 min-w-[500px] min-h-[900px] md:w-[900px] p-2.5 pb-5 bg-gray-400 justify-self-center relative">
-            <AddFridge />
+            {/* AddFridge 버튼 → 이름 받아서 새 냉장고 추가 */}
+            <AddFridge onAdd={handleAddFridge} />
 
             {fridgeList.length > 4 && (
                 <button
                     type="button"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-transparent rounded-full z-20 text-gray-700 font-bold"
+                    className="absolute left-2 top-[440px] -translate-y-1/2 p-2 bg-transparent rounded-full z-20 text-gray-700 font-bold"
                     onClick={scrollLeft}
                     aria-label="이전 냉장고 그룹 보기"
                 >
@@ -151,7 +162,7 @@ const FridgeList: React.FC = () => {
             )}
 
             <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="fridge-list" direction="horizontal">
+                <Droppable droppableId="fridge-list">
                     {(provided) => (
                         <div
                             ref={carouselRef}
@@ -179,7 +190,7 @@ const FridgeList: React.FC = () => {
                                                                     : "transform-none"
                                                             } transition-transform duration-200`}
                                                         >
-                                                            <FridgeObject fridgeName={fridge.name} />
+                                                            <FridgeObject fridgeName={fridge.name} fridgeId={fridge.id} />
                                                         </div>
                                                     )}
                                                 </Draggable>
