@@ -1,21 +1,30 @@
 import { useRef } from "react";
-import { StorageBoxBlue } from "./StorageBox.tsx";
+import { StorageBoxAddButton } from "./StorageBox.tsx";
+import { StorageBoxBlue } from "./StorageBox";
+import { useBoxStore } from "../FridgeStores/boxStore.tsx";
 
 const FridgeRefrigerator = () => {
     const carouselRef = useRef<HTMLDivElement>(null);
+    const { boxes, addBox } = useBoxStore();
 
-    // 예시: 자식 요소 배열
-    const items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // 7개로 늘림 (2x2 그리드가 2페이지)
+    // 2×2 그리드 단위로 그룹화
+    const itemGroups: typeof boxes[] = [];
+    for (let i = 0; i < boxes.length; i += 4) {
+        itemGroups.push(boxes.slice(i, i + 4));
+    }
 
-    // 아이템들을 2x2 그리드 단위로 그룹화
-    const itemGroups = [];
-    for (let i = 0; i < items.length; i += 4) {
-        itemGroups.push(items.slice(i, i + 4));
+    // 마지막 그룹에 항상 "추가 버튼" 삽입
+    if (itemGroups.length === 0 || itemGroups[itemGroups.length - 1].length < 4) {
+        itemGroups[itemGroups.length - 1] = [
+            ...(itemGroups[itemGroups.length - 1] || []),
+            { id: "add", color: "blue", name: "새 칸 추가" },
+        ];
+    } else {
+        itemGroups.push([{ id: "add", color: "blue", name: "새 칸 추가" }]);
     }
 
     const scrollLeft = () => {
         if (carouselRef.current) {
-            // 한 그리드 전체 너비만큼 스크롤 (그리드 너비 + gap)
             carouselRef.current.scrollBy({ left: -445, behavior: "smooth" });
         }
     };
@@ -38,16 +47,31 @@ const FridgeRefrigerator = () => {
                 </button>
             )}
 
-            {/* 캐러셀 영역 */}
+            {/* 캐러셀 */}
             <div
                 ref={carouselRef}
                 className="carousel h-[520px] md:w-[420px] bg-gray-200 flex flex-nowrap rounded overflow-x-auto scroll-smooth scrollbar-hide gap-4"
             >
                 {itemGroups.map((group, groupIdx) => (
-                    <div key={groupIdx} className="flex-shrink-0 grid grid-cols-2 h-[420px] w-[430px] px-2">
-                        {group.map((_, idx) => (
-                            <div className={"py-2 px-1"}>
-                                <StorageBoxBlue key={`${groupIdx}-${idx}`} />
+                    <div
+                        key={groupIdx}
+                        className="flex-shrink-0 grid grid-cols-2 h-[420px] w-[430px] px-2"
+                    >
+                        {group.map((box) => (
+                            <div key={box.id} className="py-2 px-1">
+                                {box.id === "add" ? (
+                                    <StorageBoxAddButton
+                                        onClick={() =>
+                                            addBox({
+                                                id: Date.now().toString(),
+                                                color: "blue", // FridgeRefrigerator에서는 항상 blue
+                                                name: `새 칸 ${boxes.length + 1}`,
+                                            })
+                                        }
+                                    />
+                                ) : (
+                                    <StorageBoxBlue />
+                                )}
                             </div>
                         ))}
                     </div>

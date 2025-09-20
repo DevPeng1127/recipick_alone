@@ -1,5 +1,5 @@
 import { FavoritesIcon, SettingsIcon } from "../FridgeButtons.tsx";
-import { useFridgeStore } from "../FridgeStores/fridgeStore.tsx";
+import {useFavoriteStore} from "../FridgeStores/fridgeStore.tsx";
 
 interface FridgeObjectProps {
     fridgeId: string;
@@ -7,7 +7,7 @@ interface FridgeObjectProps {
 }
 
 const FridgeObject = ({ fridgeId, fridgeName = "냉장고 이름" }: FridgeObjectProps) => {
-    const { favorites, toggleFavorite } = useFridgeStore();
+    const { favorites, toggleFavorite } = useFavoriteStore();
 
     const isFav = favorites[fridgeId] || false;
 
