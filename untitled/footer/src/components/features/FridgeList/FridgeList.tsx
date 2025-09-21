@@ -22,11 +22,14 @@ const FridgeList: React.FC = () => {
         reorderFridges(ids);
     };
 
+    // isDeleted === true인 항목 제외
+    const visibleFridges = fridges.filter((f) => !f.isDeleted);
+
     // 기본 → 즐겨찾기 → 일반 순서
     const sortedFridges = [
-        ...fridges.filter((f) => f.isDefault),
-        ...fridges.filter((f) => f.isFavorite && !f.isDefault),
-        ...fridges.filter((f) => !f.isFavorite && !f.isDefault),
+        ...visibleFridges.filter((f) => f.isDefault),
+        ...visibleFridges.filter((f) => f.isFavorite && !f.isDefault),
+        ...visibleFridges.filter((f) => !f.isFavorite && !f.isDefault),
     ];
 
     // 4개씩 그룹화
@@ -58,7 +61,6 @@ const FridgeList: React.FC = () => {
                     {(provided) => (
                         <div
                             ref={(el) => {
-                                // ref 두 개를 동시에 연결
                                 carouselRef.current = el;
                                 provided.innerRef(el);
                             }}
@@ -107,7 +109,6 @@ const FridgeList: React.FC = () => {
                     )}
                 </Droppable>
             </DragDropContext>
-
 
             {sortedFridges.length > 4 && (
                 <button

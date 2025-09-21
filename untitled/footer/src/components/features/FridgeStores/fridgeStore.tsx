@@ -10,12 +10,14 @@ export interface Fridge {
     isDefault: boolean;
     members: string[];
     boxes: string[];
-    owner: string; // 최초 생성자 (권한 체크용)
+    owner: string;
+    isDeleted: boolean; // soft delete 플래그
 }
 
 interface FridgeState {
     fridges: Fridge[];
-    currentUser: string; // 로그인한 유저 (임시)
+    currentUser: string;
+
     addFridge: (name: string) => void;
     toggleFavorite: (id: string) => void;
     setDefaultFridge: (id: string) => void;
@@ -23,12 +25,18 @@ interface FridgeState {
     addMember: (id: string, member: string) => void;
     removeMember: (id: string, member: string) => void;
     reorderFridges: (ids: string[]) => void;
+
+    updateFridgeName: (id: string, name: string) => void;
+    deleteFridge: (id: string) => Promise<boolean>;
+}
+
+async function fakeApiDeleteFridge(id: string) {
+    return new Promise<void>((resolve) => setTimeout(resolve, 300));
 }
 
 export const useFridgeStore = create<FridgeState>((set, get) => ({
-    currentUser: "me@example.com", // 나중에 로그인과 연동
+    currentUser: "me@example.com",
 
-    // ✅ 초기값을 로컬스토리지에서 불러오고, 없으면 기본값 사용
     fridges:
         loadFridges() || [
             {
@@ -40,6 +48,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
                 members: [],
                 boxes: [],
                 owner: "me@example.com",
+                isDeleted: false,
             },
             {
                 id: "fridge-2",
@@ -50,6 +59,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
                 members: [],
                 boxes: [],
                 owner: "me@example.com",
+                isDeleted: false,
             },
         ],
 
@@ -66,9 +76,10 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
                     members: [],
                     boxes: [],
                     owner: state.currentUser,
+                    isDeleted: false,
                 },
             ];
-            persistFridges(updated); // ✅ 추가 후 저장
+            persistFridges(updated);
             return { fridges: updated };
         }),
 
@@ -77,33 +88,25 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
             const updated = state.fridges.map((f) =>
                 f.id === id ? { ...f, isFavorite: !f.isFavorite } : f
             );
-            persistFridges(updated); // ✅ 저장
+            persistFridges(updated);
             return { fridges: updated };
         }),
 
     setDefaultFridge: (id) =>
         set((state) => {
             const updated = state.fridges.map((f) => {
-                if (f.id === id) {
-                    // 새 기본냉장고 → 기본+즐겨찾기 true
-                    return { ...f, isDefault: true, isFavorite: true };
-                }
-                if (f.isDefault) {
-                    // 기존 기본냉장고 → 기본 해제, 즐겨찾기는 유지
-                    return { ...f, isDefault: false, isFavorite: f.isFavorite };
-                }
+                if (f.id === id) return { ...f, isDefault: true, isFavorite: true };
+                if (f.isDefault) return { ...f, isDefault: false, isFavorite: f.isFavorite };
                 return f;
             });
-            persistFridges(updated); // ✅ 저장
+            persistFridges(updated);
             return { fridges: updated };
         }),
 
     updateMemo: (id, memo) =>
         set((state) => {
-            const updated = state.fridges.map((f) =>
-                f.id === id ? { ...f, memo } : f
-            );
-            persistFridges(updated); // ✅ 저장
+            const updated = state.fridges.map((f) => (f.id === id ? { ...f, memo } : f));
+            persistFridges(updated);
             return { fridges: updated };
         }),
 
@@ -111,11 +114,12 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
         set((state) => {
             const fridge = state.fridges.find((f) => f.id === id);
             if (!fridge) return state;
-            if (fridge.owner !== state.currentUser) return state; // 권한 체크
+            if (fridge.owner !== state.currentUser) return state;
+            if (fridge.members.includes(member)) return state;
             const updated = state.fridges.map((f) =>
                 f.id === id ? { ...f, members: [...f.members, member] } : f
             );
-            persistFridges(updated); // ✅ 저장
+            persistFridges(updated);
             return { fridges: updated };
         }),
 
@@ -123,13 +127,11 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
         set((state) => {
             const fridge = state.fridges.find((f) => f.id === id);
             if (!fridge) return state;
-            if (fridge.owner !== state.currentUser) return state; // 권한 체크
+            if (fridge.owner !== state.currentUser) return state;
             const updated = state.fridges.map((f) =>
-                f.id === id
-                    ? { ...f, members: f.members.filter((m) => m !== member) }
-                    : f
+                f.id === id ? { ...f, members: f.members.filter((m) => m !== member) } : f
             );
-            persistFridges(updated); // ✅ 저장
+            persistFridges(updated);
             return { fridges: updated };
         }),
 
@@ -137,7 +139,32 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
         set((state) => {
             const map = new Map(state.fridges.map((f) => [f.id, f]));
             const reordered = ids.map((id) => map.get(id)!).filter(Boolean);
-            persistFridges(reordered); // ✅ 저장
+            persistFridges(reordered);
             return { fridges: reordered };
         }),
+
+    updateFridgeName: (id, name) =>
+        set((state) => {
+            const updated = state.fridges.map((f) => (f.id === id ? { ...f, name } : f));
+            persistFridges(updated);
+            return { fridges: updated };
+        }),
+
+    deleteFridge: async (id) => {
+        const store = get();
+        const fridge = store.fridges.find((f) => f.id === id);
+        if (!fridge) return false;
+
+        if (fridge.isDefault) return false; // 기본 냉장고는 삭제 불가
+
+        await fakeApiDeleteFridge(id);
+        set((state) => {
+            const updated = state.fridges.map((f) =>
+                f.id === id ? { ...f, isDeleted: true } : f
+            );
+            persistFridges(updated);
+            return { fridges: updated };
+        });
+        return true;
+    },
 }));
