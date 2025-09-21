@@ -13,6 +13,7 @@
     "@types/react-beautiful-dnd": "^13.1.8",
     "lodash-es": "^4.17.21",
     "lodash.debounce": "^4.0.8",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^19.1.1",

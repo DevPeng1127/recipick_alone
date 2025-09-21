@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface AddFridgeProps {
     onAdd: (name: string) => void;
@@ -7,6 +7,13 @@ interface AddFridgeProps {
 export const AddFridge: React.FC<AddFridgeProps> = ({ onAdd }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [name, setName] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null); // ✅ input 참조
+
+    useEffect(() => {
+        if (isOpen) {
+            inputRef.current?.focus(); // ✅ 모달이 열릴 때 자동 포커스
+        }
+    }, [isOpen]);
 
     const handleSubmit = () => {
         if (!name.trim()) return;
@@ -39,8 +46,11 @@ export const AddFridge: React.FC<AddFridgeProps> = ({ onAdd }) => {
                             handleSubmit();
                         }}
                     >
-                        <h2 className="text-xl font-semibold mb-4 text-left">새 냉장고 이름</h2>
+                        <h2 className="text-xl font-semibold mb-4 text-left">
+                            새 냉장고 이름
+                        </h2>
                         <input
+                            ref={inputRef} // ✅ 포커스 받을 input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
