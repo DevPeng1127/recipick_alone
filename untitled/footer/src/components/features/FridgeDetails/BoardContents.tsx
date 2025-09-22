@@ -1,157 +1,54 @@
 import * as React from "react";
-import { useFridgeStore } from "../FridgeStores/fridgeStore";
-import { useIngredientStore } from "../FridgeStores/ingredientStore";
-import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ActiveTab } from "./FridgeBoards.tsx";
+import { BoardData } from "./types.ts";
 
-export const BoardContents: React.FC = () => {
-    const selectedId = useFridgeStore((state) => state.selectedFridgeId);
-    const fridge = useFridgeStore((state) =>
-        state.fridges.find((f) => f.id === selectedId)
-    );
-    const updateMemo = useFridgeStore((state) => state.updateMemo);
-    const selectedBoardMenu = useFridgeStore((state) => state.selectedBoardMenu);
+interface BoardContentsProps {
+    activeTab: ActiveTab;
+    data: BoardData;
+}
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [tempMemo, setTempMemo] = useState(fridge?.memo || "");
-
-    const getExpiringSoon = useIngredientStore((s) => s.getExpiringSoon);
-    const getRecentlyUsed = useIngredientStore((s) => s.getRecentlyUsed);
-
-    useEffect(() => {
-        if (fridge) setTempMemo(fridge.memo);
-    }, [fridge]);
-
-    if (!fridge) return null;
-
-    const handleSave = () => {
-        updateMemo(fridge.id, tempMemo);
-        setIsEditing(false);
+export const BoardContents: React.FC<BoardContentsProps> = ({ activeTab, data }) => {
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'memo':
+                return (
+                    <ul>
+                        {data.memos.map(memo => (
+                            <li key={memo.id} className="p-2 border-b border-amber-300">📝 {memo.content}</li>
+                        ))}
+                    </ul>
+                );
+            case 'expiry':
+                return (
+                    <ul>
+                        {data.expiries.map(item => (
+                            <li key={item.id} className="p-2 border-b border-amber-300 flex justify-between">
+                                <span>{item.name}</span>
+                                <span className={`font-bold ${item.daysLeft <= 3 ? 'text-red-600' : 'text-orange-600'}`}>
+                                    D-{item.daysLeft}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                );
+            case 'recent':
+                return (
+                    <ul>
+                        {data.recents.map(item => (
+                            <li key={item.id} className="p-2 border-b border-amber-300">
+                                {item.name} <span className="text-gray-600 text-sm">({item.usedAt})</span>
+                            </li>
+                        ))}
+                    </ul>
+                );
+            default:
+                return null;
+        }
     };
-
-    const handleCancel = () => {
-        setTempMemo(fridge.memo);
-        setIsEditing(false);
-    };
-
-    const expiringIngredients = getExpiringSoon(fridge.id, 3);
-    const recentIngredients = getRecentlyUsed(fridge.id, 5);
-
-    // ✅ 공유 멤버 전체 리스트 (실제 멤버 + 초대 보냄 상태)
-    const members = fridge.members || [];
-    const pendingInvites = fridge.pendingInvites || [];
-    const allMembers = Array.from(new Set([...members, ...pendingInvites]));
 
     return (
-        <div className="boards p-3 md:min-w-[380px] md:min-h-[320px] bg-amber-100 rounded-b-lg z-12 relative">
-            {selectedBoardMenu === "memo" && (
-                <>
-                    {isEditing ? (
-                        <div>
-                            <textarea
-                                className="w-full h-40 p-2 border rounded resize-none focus:outline-none"
-                                value={tempMemo}
-                                onChange={(e) => setTempMemo(e.target.value)}
-                            />
-                            <div className="flex justify-end mt-2 gap-2">
-                                <button
-                                    className="p-1 bg-green-500 text-white rounded"
-                                    onClick={handleSave}
-                                >
-                                    <CheckIcon size={16} />
-                                </button>
-                                <button
-                                    className="p-1 bg-red-500 text-white rounded"
-                                    onClick={handleCancel}
-                                >
-                                    <XIcon size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {/* 메모 */}
-                            <div className="flex justify-between items-start">
-                                <div>{fridge.memo}</div>
-                                <button
-                                    className="ml-2"
-                                    onClick={() => setIsEditing(true)}
-                                    title="메모 수정"
-                                >
-                                    <PencilIcon size={18} />
-                                </button>
-                            </div>
-
-                            {/* 공유 멤버 리스트 */}
-                            <div className="mt-2">
-                                <h3 className="font-bold mb-1">공유 멤버</h3>
-                                <ul className="list-disc pl-5 space-y-1">
-                                    {allMembers.map((nickname, idx) => (
-                                        <li key={idx}>
-                                            {nickname}
-                                            {pendingInvites.includes(nickname) ? " (초대 보냄)" : ""}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {selectedBoardMenu === "expiry" && (
-                <div>
-                    <h3 className="font-bold mb-2">소비기한 임박 재료</h3>
-                    {(() => {
-                        const today = new Date();
-                        const expiring = getExpiringSoon(fridge.id, 3);
-                        const expired = expiringIngredients.concat(expiring)
-                            .filter((ing) => new Date(ing.expirationDate) < today);
-
-                        const expiringOnly = expiring.filter(
-                            (ing) => new Date(ing.expirationDate) >= today
-                        );
-
-                        return expiringOnly.length === 0 && expired.length === 0 ? (
-                            <p className="text-sm text-gray-600">임박하거나 폐기 대상 재료가 없습니다.</p>
-                        ) : (
-                            <ul className="list-disc pl-5 space-y-1">
-                                {expiringOnly.map((ing) => (
-                                    <li key={ing.id}>
-                                        {ing.name} ({new Date(ing.expirationDate).toLocaleDateString()})
-                                    </li>
-                                ))}
-                                {expired.map((ing) => (
-                                    <li key={`expired-${ing.id}`} className="text-red-400">
-                                        {ing.name} ({new Date(ing.expirationDate).toLocaleDateString()}) - 폐기 필요
-                                    </li>
-                                ))}
-                            </ul>
-                        );
-                    })()}
-                </div>
-            )}
-
-            {selectedBoardMenu === "recent" && (
-                <div>
-                    <h3 className="font-bold mb-2">최근 사용한 재료</h3>
-                    {recentIngredients.length === 0 ? (
-                        <p className="text-sm text-gray-600">최근 사용된 재료가 없습니다</p>
-                    ) : (
-                        <ul className="list-disc pl-5 space-y-1">
-                            {recentIngredients.map((ing) => (
-                                <li key={ing.id}>
-                                    {ing.name} (
-                                    {ing.usedAt
-                                        ? new Date(ing.usedAt).toLocaleString()
-                                        : "시간 없음"}
-                                    )
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            )}
+        <div className={"boards p-3 md:min-w-[380px] md:min-h-[320px] bg-amber-100 rounded-b-lg z-12"}>
+            {renderContent()}
         </div>
     );
-};
+}

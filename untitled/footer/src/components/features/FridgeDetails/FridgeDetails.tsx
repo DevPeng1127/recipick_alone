@@ -1,36 +1,22 @@
-import React, { useEffect } from "react";
-import FridgeBoards from "./FridgeBoards";
-import FridgePantry from "./FridgePantry";
-import FridgeFreezer from "./FridgeFreezer";
-import FridgeRefrigerator from "./FridgeRefrigerator";
-import { useFridgeStore } from "../FridgeStores/fridgeStore";
-import { useParams } from "react-router-dom";
+import FridgeBoards from "./FridgeBoards.tsx";
+import FridgePantry from "./FridgePantry.tsx";
+import FridgeFreezer from "./FridgeFreezer.tsx";
+import FridgeRefrigerator from "./FridgeRefrigerator.tsx";
+import { boardData, freezerData, pantryData, refrigeratorData } from "./mockData.ts";
 
-const FridgeDetails: React.FC = () => {
-    const { id: fridgeId } = useParams<{ id: string }>();
-    const fridges = useFridgeStore((state) => state.fridges);
-    const setSelectedFridge = useFridgeStore((state) => state.setSelectedFridge);
-
-    useEffect(() => {
-        if (fridgeId) setSelectedFridge(fridgeId);
-    }, [fridgeId, setSelectedFridge]);
-
-    const fridge = fridges.find((f) => f.id === fridgeId);
-
-    if (!fridge) return <div className="p-4 text-center">냉장고 정보를 불러오는 중...</div>;
-
+const FridgeDetails = () => {
     return (
-        <div className="flex flex-row justify-center">
-            <div className="boardAndPantry w-[460px]">
-                <FridgeBoards />
-                <FridgePantry />
+        <div className={"flex flex-row justify-center"}>
+            <div className={"boardAndPantry w-[460px]"}>
+                <FridgeBoards data={boardData} />
+                <FridgePantry data={pantryData} />
             </div>
             <div className="freezerAndFridge w-[460px]">
-                <FridgeFreezer />
-                <FridgeRefrigerator />
+                <FridgeFreezer data={freezerData} />
+                <FridgeRefrigerator data={refrigeratorData} />
             </div>
         </div>
     );
-};
+}
 
 export default FridgeDetails;
