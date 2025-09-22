@@ -1,69 +1,82 @@
-// src/components/CompartmentDetails.tsx
 import React, { useState } from "react";
-import { XIcon } from "lucide-react";
-import { CategoryEmojiMap } from "../FridgeDetails/FridgeUtil.tsx";
-import { useFridgeStore } from "../FridgeStores/fridgeStore";
+import { StorageCompartment, FoodCategory } from "./types.ts";
 
 interface CompartmentDetailsProps {
-    box: any;
+    compartment: StorageCompartment;
     onClose: () => void;
+    onSave: (id: number, newName: string) => void;
+    onDelete: (id: number) => void;
 }
 
-const CompartmentDetails: React.FC<CompartmentDetailsProps> = ({ box, onClose }) => {
-    const updateBoxName = useFridgeStore((s) => s.updateBoxName);
-    const removeBox = useFridgeStore((s) => s.removeBox);
-    const [tempName, setTempName] = useState(box.name);
+const categoryEmoji: Record<FoodCategory, string> = {
+    vegetable: '🥬',
+    fruit: '🍎',
+    meat: '🥩',
+    seafood: '🐟',
+    dairy: '🥛',
+    grain: '🍞',
+    processed: '🥫',
+    beverage: '🧃',
+    seasoning: '🧂',
+    etc: '🧊',
+};
 
-    const handleSave = () => {
-        updateBoxName(box.id, tempName);
-        onClose();
+const CompartmentDetails: React.FC<CompartmentDetailsProps> = ({ compartment, onClose, onSave, onDelete }) => {
+    const [tempName, setTempName] = useState(compartment.name);
+
+    const handleSaveClick = () => {
+        onSave(compartment.id, tempName);
     };
 
-    const handleDelete = () => {
-        removeBox(box.id);
-        onClose();
+    const handleDeleteClick = () => {
+        // A confirmation dialog is recommended in a real application
+        onDelete(compartment.id);
     };
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg w-[400px]">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold">칸 상세</h3>
-                    <button onClick={onClose}>
-                        <XIcon />
-                    </button>
+            <div className="bg-white p-4 rounded-lg w-full max-w-sm m-4">
+                <div className="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 className="text-lg font-bold text-gray-800">칸 상세 정보</h3>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
                 </div>
-                <div className="mb-2">
-                    <label className="block text-sm font-medium">칸 이름</label>
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">칸 이름</label>
                     <input
                         value={tempName}
                         onChange={(e) => setTempName(e.target.value)}
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
 
-                {/* 재료 리스트 */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                    {box.ingredients.map((ing: any) => (
-                        <div
-                            key={ing.id}
-                            className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-sm"
-                            title={ing.name}
-                        >
-                            {CategoryEmojiMap[ing.category] || "📦"}
-                        </div>
-                    ))}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">포함된 재료</label>
+                    <div className="mt-1 flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md border min-h-[40px]">
+                        {compartment.items.map((ing, index) => (
+                            <div
+                                key={index}
+                                className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-xl border shadow-sm"
+                                title={ing.name}
+                            >
+                                {categoryEmoji[ing.category] || "📦"}
+                            </div>
+                        ))}
+                        {compartment.items.length === 0 && (
+                            <p className="text-sm text-gray-400">재료가 없습니다.</p>
+                        )}
+                    </div>
                 </div>
 
+
                 <div className="flex justify-end gap-2 mt-4">
-                    <button className="px-3 py-1 bg-gray-300 rounded" onClick={onClose}>
+                    <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300" onClick={onClose}>
                         취소
                     </button>
-                    <button className="px-3 py-1 bg-blue-500 text-white rounded" onClick={handleSave}>
-                        저장
-                    </button>
-                    <button className="px-3 py-1 bg-red-500 text-white rounded" onClick={handleDelete}>
+                    <button className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600" onClick={handleDeleteClick}>
                         삭제
+                    </button>
+                    <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={handleSaveClick}>
+                        저장
                     </button>
                 </div>
             </div>
@@ -72,3 +85,4 @@ const CompartmentDetails: React.FC<CompartmentDetailsProps> = ({ box, onClose })
 };
 
 export default CompartmentDetails;
+

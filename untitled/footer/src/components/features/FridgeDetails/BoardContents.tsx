@@ -1,23 +1,68 @@
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import { ActiveTab } from "./FridgeBoards.tsx";
 import { BoardData } from "./types.ts";
 
 interface BoardContentsProps {
     activeTab: ActiveTab;
     data: BoardData;
+    onSaveMemo: (newMemo: string) => void;
 }
 
-export const BoardContents: React.FC<BoardContentsProps> = ({ activeTab, data }) => {
+export const BoardContents: React.FC<BoardContentsProps> = ({ activeTab, data, onSaveMemo }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(data.memo);
+
+    useEffect(() => {
+        setEditText(data.memo);
+    }, [data.memo]);
+
+    const handleSave = () => {
+        onSaveMemo(editText);
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setEditText(data.memo);
+        setIsEditing(false);
+    };
+
+    const renderMemoContent = () => {
+        if (isEditing) {
+            return (
+                <div className="flex flex-col h-full">
+                    <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="flex-grow w-full p-2 border rounded border-amber-300 resize-none"
+                    />
+                    <div className="flex justify-end mt-2">
+                        <button onClick={handleCancel} className="px-4 py-1 mr-2 bg-gray-300 rounded hover:bg-gray-400">
+                            취소
+                        </button>
+                        <button onClick={handleSave} className="px-4 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700">
+                            저장
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return (
+            <div className="relative h-full">
+                <p className="whitespace-pre-wrap">{data.memo}</p>
+                <button
+                    onClick={() => setIsEditing(true)}
+                    className="absolute bottom-2 right-2 px-3 py-1 bg-amber-300 rounded hover:bg-amber-400 text-sm font-semibold"
+                >
+                    수정
+                </button>
+            </div>
+        );
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'memo':
-                return (
-                    <ul>
-                        {data.memos.map(memo => (
-                            <li key={memo.id} className="p-2 border-b border-amber-300">📝 {memo.content}</li>
-                        ))}
-                    </ul>
-                );
+                return renderMemoContent();
             case 'expiry':
                 return (
                     <ul>
@@ -51,4 +96,4 @@ export const BoardContents: React.FC<BoardContentsProps> = ({ activeTab, data })
             {renderContent()}
         </div>
     );
-}
+};

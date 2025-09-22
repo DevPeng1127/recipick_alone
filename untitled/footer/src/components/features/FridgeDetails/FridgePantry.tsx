@@ -4,9 +4,10 @@ import { StorageCompartment } from "./types.ts";
 
 interface FridgePantryProps {
     data: StorageCompartment[];
+    onCompartmentClick: (compartment: StorageCompartment) => void;
 }
 
-const FridgePantry: React.FC<FridgePantryProps> = ({ data }) => {
+const FridgePantry: React.FC<FridgePantryProps> = ({ data, onCompartmentClick }) => {
     const carouselRef = useRef<HTMLDivElement>(null);
 
     const scrollLeft = () => {
@@ -38,7 +39,11 @@ const FridgePantry: React.FC<FridgePantryProps> = ({ data }) => {
                 className="carousel mt-3 h-64 md:w-[430px] bg-amber-100 flex flex-nowrap rounded overflow-x-auto scroll-smooth scrollbar-hide px-1 gap-4"
             >
                 {data.map((compartment) => (
-                    <StorageBoxGreen key={compartment.id} name={compartment.name} items={compartment.items} />
+                    <StorageBoxGreen
+                        key={compartment.id}
+                        compartment={compartment}
+                        onClick={onCompartmentClick}
+                    />
                 ))}
             </div>
 

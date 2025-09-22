@@ -4,9 +4,10 @@ import { StorageCompartment } from "./types.ts";
 
 interface FridgeRefrigeratorProps {
     data: StorageCompartment[];
+    onCompartmentClick: (compartment: StorageCompartment) => void;
 }
 
-const FridgeRefrigerator: React.FC<FridgeRefrigeratorProps> = ({ data }) => {
+const FridgeRefrigerator: React.FC<FridgeRefrigeratorProps> = ({ data, onCompartmentClick }) => {
     const carouselRef = useRef<HTMLDivElement>(null);
 
     const itemGroups = [];
@@ -46,7 +47,10 @@ const FridgeRefrigerator: React.FC<FridgeRefrigeratorProps> = ({ data }) => {
                     <div key={groupIdx} className="flex-shrink-0 grid grid-cols-2 h-[420px] w-[430px] px-2">
                         {group.map((compartment) => (
                             <div key={compartment.id} className={"py-2 px-1"}>
-                                <StorageBoxBlue name={compartment.name} items={compartment.items} />
+                                <StorageBoxBlue
+                                    compartment={compartment}
+                                    onClick={onCompartmentClick}
+                                />
                             </div>
                         ))}
                     </div>

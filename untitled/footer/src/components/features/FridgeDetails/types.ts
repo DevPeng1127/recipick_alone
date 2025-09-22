@@ -1,17 +1,25 @@
+export type FoodCategory =
+    | 'vegetable'
+    | 'fruit'
+    | 'meat'
+    | 'seafood'
+    | 'dairy'
+    | 'grain'
+    | 'processed'
+    | 'beverage'
+    | 'seasoning'
+    | 'etc';
+
 export interface FoodItem {
     name: string;
     quantity: string;
+    category: FoodCategory;
 }
 
 export interface StorageCompartment {
     id: number;
     name: string;
     items: FoodItem[];
-}
-
-export interface Memo {
-    id: number;
-    content: string;
 }
 
 export interface ExpiryItem {
@@ -23,11 +31,11 @@ export interface ExpiryItem {
 export interface RecentItem {
     id: number;
     name: string;
-    usedAt: string; // "Y-m-d"
+    usedAt: string; // "YYYY-MM-DD"
 }
 
 export interface BoardData {
-    memos: Memo[];
+    memo: string;
     expiries: ExpiryItem[];
     recents: RecentItem[];
 }
