@@ -1,84 +1,64 @@
+// src/components/StorageBox.tsx
 import React from "react";
 
-export const StorageBoxGreen = () => {
-    return (
-        <div className={"storage_box_wrap max-w-52 h-60"}>
-            <div className={"compartment_name"}>
-                <span className={"text-base font-bold text-blue-950 p-1 inline-block"}>칸이름 여기</span>
-            </div>
-            <div className={"storage_box w-[200px] h-[220px] bg-green-600 border-gray-50 border-4 rounded-xl p-3"}>
-                여기에 식재료들
-            </div>
-        </div>
-    );
-}
-
-export const StorageBoxBlue = () => {
-    return (
-        <div className={"storage_box_wrap max-w-52 h-60"}>
-            <div className={"compartment_name"}>
-                <span className={"text-base font-bold text-blue-950 p-1 inline-block"}>칸이름 여기</span>
-            </div>
-            <div className={"storage_box w-[200px] h-[220px] bg-sky-300 border-gray-50 border-4 rounded-xl p-3"}>
-                여기에 식재료들
-            </div>
-        </div>
-    );
-}
-
-
-interface StorageBoxAddButtonProps {
+interface StorageBoxProps {
+    name?: string;
+    items?: string[]; // 식재료 카테고리 이모지 배열
+    color?: "green" | "blue"; // 배경색 선택
     onClick?: () => void;
 }
 
-export const StorageBoxAddButton: React.FC<StorageBoxAddButtonProps> = ({ onClick }) => {
+export const StorageBox: React.FC<StorageBoxProps> = ({
+                                                          name = "",
+                                                          items = [],
+                                                          color = "green",
+                                                          onClick,
+                                                      }) => {
+    const displayItems = items.slice(0, 8);
+    const hasMore = items.length > 8;
+
     return (
         <div
+            className="storage_box_wrap max-w-52 h-60 cursor-pointer"
             onClick={onClick}
-            className="storage_box_wrap max-w-52 h-60 flex flex-col items-center cursor-pointer
-                 hover:scale-105 transition-transform duration-200"
         >
             <div className="compartment_name">
-        <span className="text-base font-bold text-gray-400 p-1 inline-block">
-          새 칸 추가
+        <span className="text-base font-bold text-blue-950 p-1 inline-block">
+          {name}
         </span>
             </div>
             <div
-                className="storage_box w-[200px] h-[220px] bg-white bg-opacity-30 border-gray-200 border-4
-                   rounded-xl p-3 flex items-center justify-center shadow-md hover:shadow-lg
-                   transition-shadow duration-200"
+                className={`storage_box w-[200px] h-[220px] border-gray-50 border-4 rounded-xl p-3 flex flex-wrap content-start gap-1 items-center justify-center ${
+                    color === "green" ? "bg-green-600 text-white" : "bg-sky-300 text-white"
+                }`}
             >
-                <span className="text-5xl text-gray-500">+</span>
+                {displayItems.length > 0 ? (
+                    displayItems.map((emoji, idx) => (
+                        <span key={idx} className="text-xl">
+              {emoji}
+            </span>
+                    ))
+                ) : (
+                    // items 없으면 중앙에 name + 또는 아무 표시
+                    <span className="text-3xl font-bold">{name === "새 칸 추가" ? "+" : ""}</span>
+                )}
+                {hasMore && <span className="text-xl font-bold">…</span>}
             </div>
         </div>
     );
 };
 
-interface StorageBoxProps {
-    boxName: string;
-    ingredients: { id: string; name: string; category: string }[];
-    onClick: () => void;
-}
+// 색상 전용 래퍼
+export const StorageBoxGreen: React.FC<Omit<StorageBoxProps, "color">> = (props) => (
+    <StorageBox {...props} color="green" />
+);
+export const StorageBoxBlue: React.FC<Omit<StorageBoxProps, "color">> = (props) => (
+    <StorageBox {...props} color="blue" />
+);
 
-const StorageBox: React.FC<StorageBoxProps> = ({ boxName, ingredients, onClick }) => {
-    return (
-        <div className="storage_box_wrap max-w-52 h-60 cursor-pointer" onClick={onClick}>
-            <div className="compartment_name mb-1">
-                <span className="text-base font-bold text-blue-950">{boxName}</span>
-            </div>
-            <div className="storage_box w-[200px] h-[220px] bg-green-600 border-gray-50 border-4 rounded-xl p-2 flex flex-wrap gap-1 items-center justify-center">
-                {ingredients.slice(0, 6).map((ing) => (
-                    <div
-                        key={ing.id}
-                        className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-sm"
-                        title={ing.name}
-                    >
-                        {ing.emoji /* CompartmentDetails에서 매핑해서 넣어줌 */}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
+// 추가 버튼 전용 (선택적으로 사용 가능)
+export const StorageBoxAddButton: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
+    <StorageBoxBlue name="새 칸 추가" items={["+"]} onClick={onClick} />
+);
 
 export default StorageBox;
