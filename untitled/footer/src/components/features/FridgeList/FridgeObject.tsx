@@ -200,4 +200,94 @@ const FridgeObject: React.FC<Props> = ({ fridgeId }) => {
 
                                 {searchResults.length > 0 && (
                                     <ul className="mt-2 space-y-2 max-h-40 overflow-auto">
-                                        {searchResults.map((u)
+                                        {searchResults.map((u) => (
+                                            <li key={u} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                                <span>{u}</span>
+                                                <button
+                                                    className="px-2 py-1 bg-green-500 text-white rounded"
+                                                    onClick={() => handleInviteFromSearch(u)}
+                                                >
+                                                    초대하기
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="mb-4 border-t pt-4">
+                            <h3 className="font-semibold mb-2">공유 멤버</h3>
+                            <ul className="space-y-2">
+                                {localMembers.map((m) => (
+                                    <li key={m} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                        <div>
+                                            <div className="font-medium">
+                                                {m} {pendingInvitesMemo.includes(m) ? "(초대 보냄)" : ""}
+                                            </div>
+                                            {m === fridge.owner && <div className="text-xs text-gray-500">생성자 (owner)</div>}
+                                        </div>
+                                        <div>
+                                            {fridge.owner === currentUser && m !== fridge.owner && (
+                                                <button className="text-red-500" onClick={() => handleRemoveMemberLocal(m)}>
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="mb-4 border-t pt-4">
+                            <button className="w-full py-2 bg-red-500 text-white rounded" onClick={() => setIsDeleteModalOpen(true)}>
+                                냉장고 삭제
+                            </button>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={() => setIsModalOpen(false)}>
+                                취소
+                            </button>
+                            <button type="button" className="px-4 py-2 rounded bg-blue-500 text-white" onClick={handleSave}>
+                                저장하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-[420px]">
+                        <h3 className="text-lg font-semibold mb-2">냉장고 삭제</h3>
+                        {fridge.isDefault ? (
+                            <>
+                                <p className="mb-4 text-red-600">기본 냉장고는 삭제할 수 없습니다.</p>
+                                <div className="flex justify-end">
+                                    <button className="px-3 py-1 bg-gray-300 rounded" onClick={() => setIsDeleteModalOpen(false)}>
+                                        닫기
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p className="mb-4">"{fridge.name}" 을/를 정말 삭제하시겠습니까?</p>
+                                <div className="flex justify-end gap-2">
+                                    <button className="px-3 py-1 bg-gray-300 rounded" onClick={() => setIsDeleteModalOpen(false)}>
+                                        아니오
+                                    </button>
+                                    <button className="px-3 py-1 bg-red-500 text-white rounded" onClick={handleConfirmDelete}>
+                                        예
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default FridgeObject;

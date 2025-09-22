@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+// src/FridgeHooks/useMemberSearch.tsx
+import { useState, useEffect, useCallback } from "react";
 
 const mockUsers = [
     "alice","bob","charlie","david","eva","frank",
@@ -10,33 +11,32 @@ export const useMemberSearch = (localMembers: string[], pendingInvites: string[]
     const [searchResults, setSearchResults] = useState<string[]>([]);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-    // 배열을 useMemo로 고정
-    const localMembersSet = useMemo(() => new Set(localMembers), [localMembers]);
-    const pendingInvitesSet = useMemo(() => new Set(pendingInvites), [pendingInvites]);
-
-    useEffect(() => {
+    // 🔹 검색 결과 업데이트
+    const updateSearchResults = useCallback(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) {
             setSearchResults([]);
             return;
         }
-
-        setSearchResults(
-            mockUsers.filter(
-                (u) =>
-                    u.toLowerCase().includes(q) &&
-                    !localMembersSet.has(u) &&
-                    !pendingInvitesSet.has(u)
-            )
+        const results = mockUsers.filter(
+            (u) =>
+                u.toLowerCase().includes(q) &&
+                !localMembers.includes(u) &&
+                !pendingInvites.includes(u)
         );
-    }, [searchQuery, localMembersSet, pendingInvitesSet]); // 안전하게 Set 참조를 의존성으로 사용
+        setSearchResults(results);
+    }, [searchQuery, localMembers, pendingInvites]);
 
-    // 모달 닫았다 열면 검색 초기화
-    const resetSearch = () => {
+    useEffect(() => {
+        updateSearchResults();
+    }, [updateSearchResults]);
+
+    // 🔹 모달 닫았다 열면 검색 초기화
+    const resetSearch = useCallback(() => {
         setSearchQuery("");
         setSearchResults([]);
         setIsSearchOpen(false);
-    };
+    }, []);
 
     return {
         searchQuery,
@@ -44,6 +44,6 @@ export const useMemberSearch = (localMembers: string[], pendingInvites: string[]
         searchResults,
         isSearchOpen,
         setIsSearchOpen,
-        resetSearch
+        resetSearch,
     };
 };
