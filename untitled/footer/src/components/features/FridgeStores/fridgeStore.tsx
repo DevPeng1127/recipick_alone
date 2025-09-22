@@ -2,6 +2,14 @@
 import { create } from "zustand";
 import { persistFridges, loadFridges } from "../FridgeDetails/FridgeUtil.tsx";
 
+export type CompartmentType = "pantry" | "refrigerator" | "freezer";
+
+export interface StorageBox {
+    id: string;
+    name: string;
+    color: string; // compartment별 색 지정
+}
+
 export interface Fridge {
     id: string;
     name: string;
@@ -9,35 +17,39 @@ export interface Fridge {
     isFavorite: boolean;
     isDefault: boolean;
     members: string[];
-    pendingInvites: string[]; // 추가
-    boxes: string[];
+    pendingInvites: string[];
     owner: string;
-    isDeleted: boolean; // soft delete 플래그
+    isDeleted: boolean;
+    compartments: {
+        [key in CompartmentType]: StorageBox[];
+    };
 }
-
-export type BoardMenu = "memo" | "expiring" | "recent";
 
 interface FridgeState {
     fridges: Fridge[];
     currentUser: string;
-
     selectedFridgeId: string | null;
     selectedBoardMenu: "memo" | "expiry" | "recent";
 
     setSelectedFridge: (id: string) => void;
     setSelectedBoardMenu: (menu: "memo" | "expiry" | "recent") => void;
 
+    // 기존 기능
     addFridge: (name: string) => void;
     toggleFavorite: (id: string) => void;
     setDefaultFridge: (id: string) => void;
     updateMemo: (id: string, memo: string) => void;
     addMember: (id: string, member: string) => void;
     removeMember: (id: string, member: string) => void;
-    addPendingInvite: (id: string, member: string) => void; // 추가
-    removePendingInvite: (id: string, member: string) => void; // 추가
-    reorderFridges: (ids: string[]) => void;
+    addPendingInvite: (id: string, member: string) => void;
+    removePendingInvite: (id: string, member: string) => void;
     updateFridgeName: (id: string, name: string) => void;
     deleteFridge: (id: string) => Promise<boolean>;
+
+    // **추가된 칸 CRUD**
+    addBox: (fridgeId: string, compartment: CompartmentType, name: string) => void;
+    updateBoxName: (fridgeId: string, compartment: CompartmentType, boxId: string, name: string) => void;
+    removeBox: (fridgeId: string, compartment: CompartmentType, boxId: string) => void;
 }
 
 async function fakeApiDeleteFridge(id: string) {
@@ -46,7 +58,6 @@ async function fakeApiDeleteFridge(id: string) {
 
 export const useFridgeStore = create<FridgeState>((set, get) => ({
     currentUser: "김자취3498",
-
     fridges:
         loadFridges() || [
             {
@@ -57,24 +68,15 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
                 isDefault: true,
                 members: [],
                 pendingInvites: [],
-                boxes: [],
                 owner: "김자취3498",
                 isDeleted: false,
-            },
-            {
-                id: "fridge-2",
-                name: "냉장고 2",
-                memo: "여기에 다른 메모를 작성하세요.",
-                isFavorite: false,
-                isDefault: false,
-                members: [],
-                pendingInvites: [],
-                boxes: [],
-                owner: "김자취3498",
-                isDeleted: false,
+                compartments: {
+                    pantry: [],
+                    refrigerator: [],
+                    freezer: [],
+                },
             },
         ],
-
     selectedFridgeId: null,
     selectedBoardMenu: "memo",
 
@@ -93,9 +95,13 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
                     isDefault: state.fridges.length === 0,
                     members: [],
                     pendingInvites: [],
-                    boxes: [],
                     owner: state.currentUser,
                     isDeleted: false,
+                    compartments: {
+                        pantry: [],
+                        refrigerator: [],
+                        freezer: [],
+                    },
                 },
             ];
             persistFridges(updated);
@@ -113,11 +119,10 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
 
     setDefaultFridge: (id) =>
         set((state) => {
-            const updated = state.fridges.map((f) => {
-                if (f.id === id) return { ...f, isDefault: true, isFavorite: true };
-                if (f.isDefault) return { ...f, isDefault: false };
-                return f;
-            });
+            const updated = state.fridges.map((f) => ({
+                ...f,
+                isDefault: f.id === id,
+            }));
             persistFridges(updated);
             return { fridges: updated };
         }),
@@ -134,8 +139,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     addMember: (id, member) =>
         set((state) => {
             const fridge = state.fridges.find((f) => f.id === id);
-            if (!fridge) return state;
-            if (fridge.owner !== state.currentUser) return state;
+            if (!fridge || fridge.owner !== state.currentUser) return state;
             if (fridge.members.includes(member)) return state;
             const updated = state.fridges.map((f) =>
                 f.id === id ? { ...f, members: [...f.members, member] } : f
@@ -147,8 +151,7 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
     removeMember: (id, member) =>
         set((state) => {
             const fridge = state.fridges.find((f) => f.id === id);
-            if (!fridge) return state;
-            if (fridge.owner !== state.currentUser) return state;
+            if (!fridge || fridge.owner !== state.currentUser) return state;
             const updated = state.fridges.map((f) =>
                 f.id === id ? { ...f, members: f.members.filter((m) => m !== member) } : f
             );
@@ -178,14 +181,6 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
             return { fridges: updated };
         }),
 
-    reorderFridges: (ids) =>
-        set((state) => {
-            const map = new Map(state.fridges.map((f) => [f.id, f]));
-            const reordered = ids.map((id) => map.get(id)!).filter(Boolean);
-            persistFridges(reordered);
-            return { fridges: reordered };
-        }),
-
     updateFridgeName: (id, name) =>
         set((state) => {
             const updated = state.fridges.map((f) =>
@@ -196,10 +191,8 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
         }),
 
     deleteFridge: async (id) => {
-        const store = get();
-        const fridge = store.fridges.find((f) => f.id === id);
-        if (!fridge) return false;
-        if (fridge.isDefault) return false;
+        const fridge = get().fridges.find((f) => f.id === id);
+        if (!fridge || fridge.isDefault) return false;
 
         await fakeApiDeleteFridge(id);
         set((state) => {
@@ -211,4 +204,59 @@ export const useFridgeStore = create<FridgeState>((set, get) => ({
         });
         return true;
     },
+
+    // **Box CRUD**
+    addBox: (fridgeId, compartment, name) =>
+        set((state) => {
+            const updated = state.fridges.map((f) => {
+                if (f.id !== fridgeId) return f;
+                const color = compartment === "pantry" ? "green" : compartment === "refrigerator" ? "blue" : "cyan";
+                return {
+                    ...f,
+                    compartments: {
+                        ...f.compartments,
+                        [compartment]: [
+                            ...f.compartments[compartment],
+                            { id: `box-${Date.now()}`, name, color },
+                        ],
+                    },
+                };
+            });
+            persistFridges(updated);
+            return { fridges: updated };
+        }),
+
+    updateBoxName: (fridgeId, compartment, boxId, name) =>
+        set((state) => {
+            const updated = state.fridges.map((f) => {
+                if (f.id !== fridgeId) return f;
+                return {
+                    ...f,
+                    compartments: {
+                        ...f.compartments,
+                        [compartment]: f.compartments[compartment].map((b) =>
+                            b.id === boxId ? { ...b, name } : b
+                        ),
+                    },
+                };
+            });
+            persistFridges(updated);
+            return { fridges: updated };
+        }),
+
+    removeBox: (fridgeId, compartment, boxId) =>
+        set((state) => {
+            const updated = state.fridges.map((f) => {
+                if (f.id !== fridgeId) return f;
+                return {
+                    ...f,
+                    compartments: {
+                        ...f.compartments,
+                        [compartment]: f.compartments[compartment].filter((b) => b.id !== boxId),
+                    },
+                };
+            });
+            persistFridges(updated);
+            return { fridges: updated };
+        }),
 }));

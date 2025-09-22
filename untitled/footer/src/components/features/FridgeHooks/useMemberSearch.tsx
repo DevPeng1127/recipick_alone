@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const mockUsers = [
     "alice","bob","charlie","david","eva","frank",
@@ -10,22 +10,26 @@ export const useMemberSearch = (localMembers: string[], pendingInvites: string[]
     const [searchResults, setSearchResults] = useState<string[]>([]);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-    // 검색 결과 업데이트
+    // 배열을 useMemo로 고정
+    const localMembersSet = useMemo(() => new Set(localMembers), [localMembers]);
+    const pendingInvitesSet = useMemo(() => new Set(pendingInvites), [pendingInvites]);
+
     useEffect(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) {
             setSearchResults([]);
             return;
         }
+
         setSearchResults(
             mockUsers.filter(
                 (u) =>
                     u.toLowerCase().includes(q) &&
-                    !localMembers.includes(u) &&
-                    !pendingInvites.includes(u)
+                    !localMembersSet.has(u) &&
+                    !pendingInvitesSet.has(u)
             )
         );
-    }, [searchQuery, localMembers, pendingInvites]);
+    }, [searchQuery, localMembersSet, pendingInvitesSet]); // 안전하게 Set 참조를 의존성으로 사용
 
     // 모달 닫았다 열면 검색 초기화
     const resetSearch = () => {

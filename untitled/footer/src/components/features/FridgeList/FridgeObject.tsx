@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// src/components/FridgeObject.tsx
+import React, { useEffect, useState, useMemo } from "react";
 import { useFridgeStore } from "../FridgeStores/fridgeStore";
 import { FavoritesIcon, SettingsIcon } from "../FridgeButtons";
 import { useNavigate } from "react-router-dom";
@@ -32,17 +33,18 @@ const FridgeObject: React.FC<Props> = ({ fridgeId }) => {
     const [editIsDefault, setEditIsDefault] = useState(false);
     const [localMembers, setLocalMembers] = useState<string[]>([]);
 
+    const pendingInvitesMemo = useMemo(() => fridge.pendingInvites || [], [fridge.pendingInvites]);
     const { searchQuery, setSearchQuery, searchResults, setIsSearchOpen, resetSearch } =
-        useMemberSearch(localMembers, fridge.pendingInvites || []);
+        useMemberSearch(localMembers, pendingInvitesMemo);
 
     useEffect(() => {
         if (isModalOpen && fridge) {
             setEditName(fridge.name);
             setEditIsDefault(Boolean(fridge.isDefault));
-            setLocalMembers(Array.from(new Set([fridge.owner, ...(fridge.members || []), ...(fridge.pendingInvites || [])])));
+            setLocalMembers(Array.from(new Set([fridge.owner, ...(fridge.members || []), ...pendingInvitesMemo])));
             resetSearch();
         }
-    }, [isModalOpen, fridge, resetSearch]);
+    }, [isModalOpen, fridge, pendingInvitesMemo, resetSearch]);
 
     const handleSave = () => {
         if (!fridge) return;
@@ -57,16 +59,17 @@ const FridgeObject: React.FC<Props> = ({ fridgeId }) => {
         }
 
         const currentMembers = fridge.members || [];
-        const newMembers = localMembers.filter((m) => m !== fridge.owner && !(fridge.pendingInvites || []).includes(m));
+        const newMembers = localMembers.filter((m) => m !== fridge.owner && !pendingInvitesMemo.includes(m));
 
+        // 추가/삭제 멤버 처리
         const toAdd = newMembers.filter((m) => !currentMembers.includes(m));
         const toRemove = currentMembers.filter((m) => !newMembers.includes(m));
-
         toAdd.forEach((m) => addMember(fridge.id, m));
         toRemove.forEach((m) => removeMember(fridge.id, m));
 
-        const newPending = localMembers.filter((m) => (fridge.pendingInvites || []).includes(m));
-        const removedPending = (fridge.pendingInvites || []).filter((m) => !newPending.includes(m));
+        // pending 멤버 처리
+        const newPending = localMembers.filter((m) => pendingInvitesMemo.includes(m));
+        const removedPending = pendingInvitesMemo.filter((m) => !newPending.includes(m));
         removedPending.forEach((m) => removePendingInvite(fridge.id, m));
 
         setIsModalOpen(false);
@@ -197,94 +200,4 @@ const FridgeObject: React.FC<Props> = ({ fridgeId }) => {
 
                                 {searchResults.length > 0 && (
                                     <ul className="mt-2 space-y-2 max-h-40 overflow-auto">
-                                        {searchResults.map((u) => (
-                                            <li key={u} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                                <span>{u}</span>
-                                                <button
-                                                    className="px-2 py-1 bg-green-500 text-white rounded"
-                                                    onClick={() => handleInviteFromSearch(u)}
-                                                >
-                                                    초대하기
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="mb-4 border-t pt-4">
-                            <h3 className="font-semibold mb-2">공유 멤버</h3>
-                            <ul className="space-y-2">
-                                {localMembers.map((m) => (
-                                    <li key={m} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                        <div>
-                                            <div className="font-medium">
-                                                {m} {(fridge.pendingInvites || []).includes(m) ? "(초대 보냄)" : ""}
-                                            </div>
-                                            {m === fridge.owner && <div className="text-xs text-gray-500">생성자 (owner)</div>}
-                                        </div>
-                                        <div>
-                                            {fridge.owner === currentUser && m !== fridge.owner && (
-                                                <button className="text-red-500" onClick={() => handleRemoveMemberLocal(m)}>
-                                                    ✕
-                                                </button>
-                                            )}
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        <div className="mb-4 border-t pt-4">
-                            <button className="w-full py-2 bg-red-500 text-white rounded" onClick={() => setIsDeleteModalOpen(true)}>
-                                냉장고 삭제
-                            </button>
-                        </div>
-
-                        <div className="flex justify-end gap-2">
-                            <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={() => setIsModalOpen(false)}>
-                                취소
-                            </button>
-                            <button type="button" className="px-4 py-2 rounded bg-blue-500 text-white" onClick={handleSave}>
-                                저장하기
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-[420px]">
-                        <h3 className="text-lg font-semibold mb-2">냉장고 삭제</h3>
-                        {(fridge.isDefault ? (
-                            <>
-                                <p className="mb-4 text-red-600">기본 냉장고는 삭제할 수 없습니다.</p>
-                                <div className="flex justify-end">
-                                    <button className="px-3 py-1 bg-gray-300 rounded" onClick={() => setIsDeleteModalOpen(false)}>
-                                        닫기
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <p className="mb-4">"{fridge.name}" 을/를 정말 삭제하시겠습니까?</p>
-                                <div className="flex justify-end gap-2">
-                                    <button className="px-3 py-1 bg-gray-300 rounded" onClick={() => setIsDeleteModalOpen(false)}>
-                                        아니오
-                                    </button>
-                                    <button className="px-3 py-1 bg-red-500 text-white rounded" onClick={handleConfirmDelete}>
-                                        예
-                                    </button>
-                                </div>
-                            </>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default FridgeObject;
+                                        {searchResults.map((u)

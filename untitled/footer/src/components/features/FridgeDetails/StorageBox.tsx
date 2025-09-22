@@ -53,3 +53,32 @@ export const StorageBoxAddButton: React.FC<StorageBoxAddButtonProps> = ({ onClic
         </div>
     );
 };
+
+interface StorageBoxProps {
+    boxName: string;
+    ingredients: { id: string; name: string; category: string }[];
+    onClick: () => void;
+}
+
+const StorageBox: React.FC<StorageBoxProps> = ({ boxName, ingredients, onClick }) => {
+    return (
+        <div className="storage_box_wrap max-w-52 h-60 cursor-pointer" onClick={onClick}>
+            <div className="compartment_name mb-1">
+                <span className="text-base font-bold text-blue-950">{boxName}</span>
+            </div>
+            <div className="storage_box w-[200px] h-[220px] bg-green-600 border-gray-50 border-4 rounded-xl p-2 flex flex-wrap gap-1 items-center justify-center">
+                {ingredients.slice(0, 6).map((ing) => (
+                    <div
+                        key={ing.id}
+                        className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-sm"
+                        title={ing.name}
+                    >
+                        {ing.emoji /* CompartmentDetails에서 매핑해서 넣어줌 */}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export default StorageBox;

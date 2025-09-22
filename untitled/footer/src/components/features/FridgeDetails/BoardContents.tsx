@@ -102,18 +102,33 @@ export const BoardContents: React.FC = () => {
             {selectedBoardMenu === "expiry" && (
                 <div>
                     <h3 className="font-bold mb-2">소비기한 임박 재료</h3>
-                    {expiringIngredients.length === 0 ? (
-                        <p className="text-sm text-gray-600">임박한 재료가 없습니다.</p>
-                    ) : (
-                        <ul className="list-disc pl-5 space-y-1">
-                            {expiringIngredients.map((ing) => (
-                                <li key={ing.id}>
-                                    {ing.name} (
-                                    {new Date(ing.expirationDate).toLocaleDateString()})
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                    {(() => {
+                        const today = new Date();
+                        const expiring = getExpiringSoon(fridge.id, 3);
+                        const expired = expiringIngredients.concat(expiring)
+                            .filter((ing) => new Date(ing.expirationDate) < today);
+
+                        const expiringOnly = expiring.filter(
+                            (ing) => new Date(ing.expirationDate) >= today
+                        );
+
+                        return expiringOnly.length === 0 && expired.length === 0 ? (
+                            <p className="text-sm text-gray-600">임박하거나 폐기 대상 재료가 없습니다.</p>
+                        ) : (
+                            <ul className="list-disc pl-5 space-y-1">
+                                {expiringOnly.map((ing) => (
+                                    <li key={ing.id}>
+                                        {ing.name} ({new Date(ing.expirationDate).toLocaleDateString()})
+                                    </li>
+                                ))}
+                                {expired.map((ing) => (
+                                    <li key={`expired-${ing.id}`} className="text-red-400">
+                                        {ing.name} ({new Date(ing.expirationDate).toLocaleDateString()}) - 폐기 필요
+                                    </li>
+                                ))}
+                            </ul>
+                        );
+                    })()}
                 </div>
             )}
 
